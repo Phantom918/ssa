@@ -82,3 +82,18 @@ springdoc:
       - name: gateway-server
         url: http://localhost:9000/v3/api-docs/gateway-server
 
+# 白名单配置
+whitelist:
+  urls:
+    - "/auth/**"
+    - "/favicon.ico"
+    - "/oauth2/**"
+    - "/webjars/**"
+    - "/api-docs/**"
+    - "/gateway-server/v3/**"
+    - "/gateway-server/swagger-ui/**"
+    - "/gateway-server/swagger-ui"
+    - "/swagger-ui/index.html"
+    - "/provider-server/v3/**"
+    - "/provider-server/hello"
+    - "/hello"

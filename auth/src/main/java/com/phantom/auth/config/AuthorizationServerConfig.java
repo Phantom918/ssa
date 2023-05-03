@@ -22,7 +22,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.*;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.authorization.*;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
@@ -32,8 +33,7 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
-import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.oauth2.server.authorization.token.*;
 import org.springframework.security.oauth2.server.authorization.web.OAuth2ClientAuthenticationFilter;
 import org.springframework.security.rsa.crypto.KeyStoreKeyFactory;
 import org.springframework.security.web.SecurityFilterChain;
@@ -67,17 +67,6 @@ public class AuthorizationServerConfig {
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-
-        // 设置jwt token个性化
-        http.setSharedObject(OAuth2TokenCustomizer.class, oAuth2TokenContext -> {
-            if (oAuth2TokenContext instanceof JwtEncodingContext) {
-                JwtEncodingContext context = (JwtEncodingContext) oAuth2TokenContext;
-                // 添加一个自定义头
-                context.getJwsHeader().header("client-id", context.getRegisteredClient().getClientId());
-                context.getJwsHeader().header("authorization-grant-type", context.getAuthorizationGrantType().getValue());
-//                context.getClaims().claim("client-id", context.getRegisteredClient().getClientId());
-            }
-        });
 
         // 授权服务器配置
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
@@ -143,6 +132,7 @@ public class AuthorizationServerConfig {
                     }
                 });
 
+        // 设置授权服务器的配置
         RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
 
         http
@@ -305,31 +295,14 @@ public class AuthorizationServerConfig {
     }
 
     /**
-     * 把资源拥有者授权确认操作保存到数据库
+     * 把token下发信息保存到数据库（自己看需要是否需要保存这种记录再去决定是否配置）
      * 资源拥有者（Resource Owner）对客户端的授权记录
      *
      * @return
      */
-    @Bean
+//    @Bean
     public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate, RegisteredClientRepository registeredClientRepository) {
-        JdbcOAuth2AuthorizationService authorizationService = new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
-/*
-
-        class CustomOAuth2AuthorizationRowMapper extends JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper {
-            public CustomOAuth2AuthorizationRowMapper(RegisteredClientRepository registeredClientRepository) {
-                super(registeredClientRepository);
-                getObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-                this.setLobHandler(new DefaultLobHandler());
-            }
-        }
-
-        CustomOAuth2AuthorizationRowMapper oAuth2AuthorizationRowMapper = new CustomOAuth2AuthorizationRowMapper(registeredClientRepository);
-        authorizationService.setAuthorizationRowMapper(oAuth2AuthorizationRowMapper);
-*/
-
-
-        return authorizationService;
-//        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
     }
 
 
@@ -339,7 +312,6 @@ public class AuthorizationServerConfig {
 //        RSAKey rsaKey = Jwks.generateRsa();
 //        JWKSet jwkSet = new JWKSet(rsaKey);
 //        return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
-
 
         // gateway-oauth2 自定义配置
         // 加载证书 读取类路径文件
@@ -365,6 +337,40 @@ public class AuthorizationServerConfig {
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
     }
+
+    @Bean
+    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
+        return new NimbusJwtEncoder(jwkSource);
+    }
+
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
+        return jwt -> {
+            log.info("自定义添加token信息.....");
+            JwsHeader.Builder headers = jwt.getJwsHeader();
+            JwtClaimsSet.Builder claims = jwt.getClaims();
+            // access_token 自定义
+            if (jwt.getTokenType().equals(OAuth2TokenType.ACCESS_TOKEN)) {
+                log.info("access_token 自定义....");
+                // 自定义 header
+                headers.header("customerHeader", "这是一个自定义header");
+                // 自定义 claim(也就是对应第二段 PAYLOAD)
+                claims.claim("customerClaim", "这是一个自定义Claim");
+            } else if (jwt.getTokenType().getValue().equals(OidcParameterNames.ID_TOKEN)) {
+                // id_token 自定义
+            }
+        };
+    }
+
+    @Bean
+    public OAuth2TokenGenerator<?> tokenGenerator(JwtEncoder jwtEncoder, OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer) {
+        JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
+        jwtGenerator.setJwtCustomizer(tokenCustomizer);
+        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
+        OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
+        return new DelegatingOAuth2TokenGenerator(jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
+    }
+
 
     /**
      * 授权服务信息配置

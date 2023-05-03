@@ -35,7 +35,7 @@ public class CustomServerBearerTokenAuthenticationConverter implements ServerAut
         return Mono.fromCallable(() -> token(exchange.getRequest())).handle((token, sink) -> {
             if (token.isEmpty()) {
                 BearerTokenError error = invalidTokenError();
-                // 这里需要做空盘，如果是白名单没有token，需要放行
+                // 这里需要做空判，如果是白名单没有token，需要放行
                 sink.error(new OAuth2AuthenticationException(error));
                 return;
             }

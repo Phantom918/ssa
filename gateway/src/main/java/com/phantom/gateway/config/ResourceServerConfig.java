@@ -39,6 +39,12 @@ import java.util.Base64;
 @EnableWebFluxSecurity
 public class ResourceServerConfig {
 
+    /**
+     * 白名单配置
+     */
+    @jakarta.annotation.Resource
+    private WhitelistUrl whitelistUrl;
+
     @Autowired
     private CustomReactiveAuthorizationManager customReactiveAuthorizationManager;
 
@@ -61,15 +67,8 @@ public class ResourceServerConfig {
 //                .bearerTokenConverter(new CustomServerBearerTokenAuthenticationConverter())
                 .and()
                 .authorizeExchange()
-                // 所有以 /auth/** 开头的请求全部放行
-                .pathMatchers("/auth/**", "/favicon.ico", "/oauth2/**",
-                        "/swagger-ui.html", "/swagger-ui/**",
-                        "/v3/api-docs/**", "/webjars/**",
-                        "/swagger-ui/index.html", "/api-docs/**",
-                        "/gateway-server/v3/api-docs/**", "/gateway-server/swagger-ui/**",
-                        "/gateway-server/v3/api-docs", "/gateway-server/swagger-ui",
-                        "/provider-server/v3/api-docs",
-                        "/hello", "/hello/**")
+                // 白名单配置
+                .pathMatchers(whitelistUrl.getUrls().toArray(new String[0]))
                 .permitAll()
                 // 其余的请求都交由此处进行权限判断处理
                 .anyExchange()

@@ -1,4 +1,4 @@
-package com.phantom.gateway.entity;
+package com.phantom.provider.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.v3.oas.annotations.media.Schema;

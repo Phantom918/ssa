@@ -38,6 +38,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Assert.notNull(username, "用户名不能为空!");
         User user = userMapper.selectUserAuthorityByUsername(username);
+        if (user == null) {
+            throw new UsernameNotFoundException("用户不存在!");
+        }
         // 用户是否有效
         boolean enabledFlag = user.getStatus() == 0;
         // 注意: 这里使用的是spring security的UserDetails, 而不是自己的User，即使使用自己的User实现了UserDetails接口也不行，会报一个如下的错误，
@@ -53,6 +56,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 enabledFlag,
                 enabledFlag,
                 getAuthorities(user));
+        log.info("用户getAuthorities(user): {}", userDetails.getAuthorities());
         if (!userDetails.isEnabled()) {
             throw new DisabledException("用户已被禁用");
         } else if (!userDetails.isAccountNonLocked()) {

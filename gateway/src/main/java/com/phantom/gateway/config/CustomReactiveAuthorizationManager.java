@@ -1,7 +1,10 @@
 package com.phantom.gateway.config;
 
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.nacos.shaded.com.google.common.collect.Maps;
+import com.phantom.gateway.mapper.UserMapper;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -14,6 +17,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.PathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
@@ -32,51 +36,52 @@ import java.util.Objects;
 @Component
 public class CustomReactiveAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
 
+
+    @Resource
+    private UserMapper userMapper;
+
     /**
-     * 此处保存的是资源对应的权限，可以从数据库中获取
+     * 白名单配置
      */
-    private static final Map<String, String> AUTH_MAP = Maps.newConcurrentMap();
-
-    @PostConstruct
-    public void initAuthMap() {
-        AUTH_MAP.put("/provider-server/findAllUsers", "user.userInfo");
-        AUTH_MAP.put("/provider-server/addUser", "ROLE_ADMIN");
-    }
-
+    @Resource
+    private WhitelistUrl whitelistUrl;
 
     @Override
     public Mono<AuthorizationDecision> check(Mono<Authentication> authentication, AuthorizationContext authorizationContext) {
         ServerWebExchange exchange = authorizationContext.getExchange();
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
-
-        // 带通配符的可以使用这个进行匹配
-        PathMatcher pathMatcher = new AntPathMatcher();
-        String authorities = AUTH_MAP.get(path);
-        log.info("访问路径:[{}],所需要的权限是:[{}]", path, authorities);
-
         // option 请求，全部放行
         if (request.getMethod() == HttpMethod.OPTIONS) {
             return Mono.just(new AuthorizationDecision(true));
         }
 
-        // 不在权限范围内的url，全部拒绝
-        if (!StringUtils.hasText(authorities)) {
-            return Mono.just(new AuthorizationDecision(false));
-        }
-
-        return authentication
+        return authentication.flatMap(auth -> {
+            log.info("当前用户[{}], 访问路径:[{}]", auth.getName(), path);
+            // 查询当前登录的用户是否有权限访问
+            Integer count = userMapper.checkAuthorityCount(auth.getName(), path);
+            log.info("当前访问路径[{}]查询到的权限配置为[{}]条....", path, count);
+            if (count > 0) {
+                return Mono.just(new AuthorizationDecision(true));
+            } else {
+                return Mono.just(new AuthorizationDecision(false));
+            }
+        });
+        /*return authentication
                 .filter(Authentication::isAuthenticated)
                 .filter(a -> a instanceof JwtAuthenticationToken)
                 .cast(JwtAuthenticationToken.class)
                 .doOnNext(token -> {
+                    Integer count = userMapper.checkAuthorityCount(token.getName(), path);
+                    log.info("查询到的url数量: {}", count);
                     log.info("当前请求携带的头信息: {}", token.getToken().getHeaders());
                     log.info("当前请求携带的token信息: {}", token.getTokenAttributes());
+                    log.info("当前请求携带的token信息6: {}", token.getName());
                 })
                 .flatMapIterable(AbstractAuthenticationToken::getAuthorities)
                 .map(GrantedAuthority::getAuthority)
                 .any(authority -> Objects.equals(authority, authorities))
                 .map(AuthorizationDecision::new)
-                .defaultIfEmpty(new AuthorizationDecision(false));
+                .defaultIfEmpty(new AuthorizationDecision(false));*/
     }
 }
