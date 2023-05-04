@@ -1,31 +1,17 @@
 package com.phantom.gateway.config;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.nacos.shaded.com.google.common.collect.Maps;
 import com.phantom.gateway.mapper.UserMapper;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.PathMatcher;
-import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * 自定义授权管理器，判断用户是否有权限访问
@@ -40,11 +26,6 @@ public class CustomReactiveAuthorizationManager implements ReactiveAuthorization
     @Resource
     private UserMapper userMapper;
 
-    /**
-     * 白名单配置
-     */
-    @Resource
-    private WhitelistUrl whitelistUrl;
 
     @Override
     public Mono<AuthorizationDecision> check(Mono<Authentication> authentication, AuthorizationContext authorizationContext) {

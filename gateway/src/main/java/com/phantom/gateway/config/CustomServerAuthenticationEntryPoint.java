@@ -19,8 +19,8 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class CustomServerAuthenticationEntryPoint implements ServerAuthenticationEntryPoint {
     @Override
-    public Mono<Void> commence(ServerWebExchange exchange, AuthenticationException ex) {
-        log.error("发生了认证异常", ex);
+    public Mono<Void> commence(ServerWebExchange exchange, AuthenticationException exception) {
+        log.error("认证异常: ", exception);
         return Mono.defer(() -> Mono.just(exchange.getResponse()))
                 .flatMap(response -> {
                     response.setStatusCode(HttpStatus.UNAUTHORIZED);

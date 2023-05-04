@@ -20,23 +20,20 @@ import java.nio.charset.StandardCharsets;
  */
 @Slf4j
 public class CustomServerAccessDeniedHandler implements ServerAccessDeniedHandler {
-    
+
     @Override
-    public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException denied) {
-        
-        log.error("无权限访问:", denied);
+    public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException exception) {
+        log.error("鉴权异常: ", exception);
         ServerHttpRequest request = exchange.getRequest();
-        
         return exchange.getPrincipal()
-                .doOnNext(principal -> log.info("用户[{}]没有访问[{}]的权限.", principal.getName(), request.getURI()))
+                .doOnNext(principal -> log.info("当前用户[{}]没有访问[{}]的权限.", principal.getName(), request.getURI()))
                 .flatMap(principal -> {
                     ServerHttpResponse response = exchange.getResponse();
                     response.setStatusCode(HttpStatus.FORBIDDEN);
                     response.getHeaders().add("content-type", "application/json;charset=UTF-8");
                     String body = "{\"code\":403,\"msg\":\"您无权限访问\"}";
                     DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
-                    return response.writeWith(Mono.just(buffer))
-                            .doOnError(error -> DataBufferUtils.release(buffer));
+                    return response.writeWith(Mono.just(buffer)).doOnError(error -> DataBufferUtils.release(buffer));
                 });
     }
 }
