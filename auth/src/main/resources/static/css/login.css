@@ -1,0 +1,33 @@
+/* 背景图设置 */
+.body_bg {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    text-align: center;
+    border-color: #666;
+    background-image: url(../images/login_bg1.jpg);
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+}
+
+/* 面板位置 */
+.content {
+    display: inline-block;
+    position: absolute;
+    top: 20%;
+    margin: auto;
+    left: 0;
+    right: 0;
+    font-size: 14px;
+    color: #fff;
+    width: 550px;
+}
+
+/* 毛玻璃效果 */
+.form_bg {
+    background-color: transparent;
+    backdrop-filter: blur(10px);
+    border-radius: 4%;
+    padding: 3em 0;
+}

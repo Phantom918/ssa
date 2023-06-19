@@ -36,101 +36,95 @@ import java.util.*;
 @Controller
 public class AuthorizationConsentController {
 
-	private final RegisteredClientRepository registeredClientRepository;
+    private final RegisteredClientRepository registeredClientRepository;
 
-	private final OAuth2AuthorizationConsentService authorizationConsentService;
+    private final OAuth2AuthorizationConsentService authorizationConsentService;
 
-	public AuthorizationConsentController(RegisteredClientRepository registeredClientRepository,
-			OAuth2AuthorizationConsentService authorizationConsentService) {
-		this.registeredClientRepository = registeredClientRepository;
-		this.authorizationConsentService = authorizationConsentService;
-	}
+    public AuthorizationConsentController(RegisteredClientRepository registeredClientRepository,
+                                          OAuth2AuthorizationConsentService authorizationConsentService) {
+        this.registeredClientRepository = registeredClientRepository;
+        this.authorizationConsentService = authorizationConsentService;
+    }
 
-	/**
-	 * 自定义授权界面数据准备
-	 * @param principal
-	 * @param model
-	 * @param clientId
-	 * @param scope
-	 * @param state
-	 * @return
-	 */
-	@GetMapping(value = "/oauth2/consent")
-	public String consent(Principal principal, Model model,
-			@RequestParam(OAuth2ParameterNames.CLIENT_ID) String clientId,
-			@RequestParam(OAuth2ParameterNames.SCOPE) String scope,
-			@RequestParam(OAuth2ParameterNames.STATE) String state) {
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
 
-		// Remove scopes that were already approved
-		Set<String> scopesToApprove = new HashSet<>();
-		Set<String> previouslyApprovedScopes = new HashSet<>();
-		RegisteredClient registeredClient = this.registeredClientRepository.findByClientId(clientId);
-		assert registeredClient != null;
-		OAuth2AuthorizationConsent currentAuthorizationConsent =
-				this.authorizationConsentService.findById(registeredClient.getId(), principal.getName());
-		Set<String> authorizedScopes;
-		if (currentAuthorizationConsent != null) {
-			authorizedScopes = currentAuthorizationConsent.getScopes();
-		} else {
-			authorizedScopes = Collections.emptySet();
-		}
-		for (String requestedScope : StringUtils.delimitedListToStringArray(scope, " ")) {
-			if (OidcScopes.OPENID.equals(requestedScope)) {
-				continue;
-			}
-			if (authorizedScopes.contains(requestedScope)) {
-				previouslyApprovedScopes.add(requestedScope);
-			} else {
-				scopesToApprove.add(requestedScope);
-			}
-		}
+    /**
+     * 自定义授权界面数据准备
+     *
+     * @param principal
+     * @param model
+     * @param clientId
+     * @param scope
+     * @param state
+     * @return
+     */
+    @GetMapping(value = "/oauth2/consent")
+    public String consent(Principal principal, Model model,
+                          @RequestParam(OAuth2ParameterNames.CLIENT_ID) String clientId,
+                          @RequestParam(OAuth2ParameterNames.SCOPE) String scope,
+                          @RequestParam(OAuth2ParameterNames.STATE) String state) {
 
-		model.addAttribute("clientId", clientId);
-		model.addAttribute("state", state);
-		model.addAttribute("scopes", withDescription(scopesToApprove));
-		model.addAttribute("previouslyApprovedScopes", withDescription(previouslyApprovedScopes));
-		model.addAttribute("principalName", principal.getName());
+        // Remove scopes that were already approved
+        Set<String> scopesToApprove = new HashSet<>();
+        Set<String> previouslyApprovedScopes = new HashSet<>();
+        RegisteredClient registeredClient = this.registeredClientRepository.findByClientId(clientId);
+        assert registeredClient != null;
+        OAuth2AuthorizationConsent currentAuthorizationConsent = this.authorizationConsentService.findById(registeredClient.getId(), principal.getName());
+        Set<String> authorizedScopes;
+        if (currentAuthorizationConsent != null) {
+            authorizedScopes = currentAuthorizationConsent.getScopes();
+        } else {
+            authorizedScopes = Collections.emptySet();
+        }
+        for (String requestedScope : StringUtils.delimitedListToStringArray(scope, " ")) {
+            if (OidcScopes.OPENID.equals(requestedScope)) {
+                continue;
+            }
+            if (authorizedScopes.contains(requestedScope)) {
+                previouslyApprovedScopes.add(requestedScope);
+            } else {
+                scopesToApprove.add(requestedScope);
+            }
+        }
 
-		return "consent";
-	}
+        model.addAttribute("clientId", clientId);
+        model.addAttribute("state", state);
+        model.addAttribute("scopes", withDescription(scopesToApprove));
+        model.addAttribute("previouslyApprovedScopes", withDescription(previouslyApprovedScopes));
+        model.addAttribute("principalName", principal.getName());
 
-	private static Set<ScopeWithDescription> withDescription(Set<String> scopes) {
-		Set<ScopeWithDescription> scopeWithDescriptions = new HashSet<>();
-		for (String scope : scopes) {
-			scopeWithDescriptions.add(new ScopeWithDescription(scope));
+        return "consent";
+    }
 
-		}
-		return scopeWithDescriptions;
-	}
+    private static Set<ScopeWithDescription> withDescription(Set<String> scopes) {
+        Set<ScopeWithDescription> scopeWithDescriptions = new HashSet<>();
+        for (String scope : scopes) {
+            scopeWithDescriptions.add(new ScopeWithDescription(scope));
 
-	public static class ScopeWithDescription {
-		private static final String DEFAULT_DESCRIPTION = "UNKNOWN SCOPE - We cannot provide information about this permission, use caution when granting this.";
-		private static final Map<String, String> scopeDescriptions = new HashMap<>();
-		static {
-			scopeDescriptions.put(
-					OidcScopes.PROFILE,
-					"此应用将能够读取您的个人资料信息"
-			);
-			scopeDescriptions.put(
-					"message.read",
-					"此应用将能够读取您的消息"
-			);
-			scopeDescriptions.put(
-					"message.write",
-					"此应用将能够添加新消息，同时也能编辑或者删除消息"
-			);
-			scopeDescriptions.put(
-					"other.scope",
-					"这是范围描述的另一个范围示例."
-			);
-		}
+        }
+        return scopeWithDescriptions;
+    }
 
-		public final String scope;
-		public final String description;
+    public static class ScopeWithDescription {
+        private static final String DEFAULT_DESCRIPTION = "UNKNOWN SCOPE - We cannot provide information about this permission, use caution when granting this.";
+        private static final Map<String, String> scopeDescriptions = new HashMap<>();
 
-		ScopeWithDescription(String scope) {
-			this.scope = scope;
-			this.description = scopeDescriptions.getOrDefault(scope, DEFAULT_DESCRIPTION);
-		}
-	}
+        static {
+            scopeDescriptions.put(OidcScopes.PROFILE, "此应用将能够读取您的个人资料信息");
+            scopeDescriptions.put("message.read", "此应用将能够读取您的消息");
+            scopeDescriptions.put("message.write", "此应用将能够添加新消息，同时也能编辑或者删除消息");
+            scopeDescriptions.put("other.scope", "这是范围描述的另一个范围示例.");
+        }
+
+        public final String scope;
+        public final String description;
+
+        ScopeWithDescription(String scope) {
+            this.scope = scope;
+            this.description = scopeDescriptions.getOrDefault(scope, DEFAULT_DESCRIPTION);
+        }
+    }
 }
