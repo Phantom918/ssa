@@ -199,7 +199,8 @@ public class AuthorizationServerConfig {
         // 客户端配置
         ClientSettings clientSettings = ClientSettings.builder()
                 // 是否需要用户授权确认的界面这一过程
-                .requireAuthorizationConsent(true).build();
+                .requireAuthorizationConsent(true)
+                .build();
 
         return RegisteredClient
                 .withId(UUID.randomUUID().toString())
@@ -219,7 +220,7 @@ public class AuthorizationServerConfig {
                 // 回调地址: 授权服务器向当前客户端响应后，会回调下面地址
                 //不在此列的地址将被拒统，建议使用IP或域名，不要使用localhost
                 .redirectUri("http://127.0.0.1:8000/login/oauth2/code/myClient")
-                .redirectUri("http://127.0.0.1:8000")
+                .redirectUri("http://127.0.0.1:3000/token")
                 .redirectUri("https://www.baidu.com")
                 // 授权范围(此客户端能够授权的范围，名称自定义)
                 .scope("user.userInfo")
@@ -271,7 +272,7 @@ public class AuthorizationServerConfig {
                 // 回调地址: 授权服务器向当前客户端响应后，会回调下面地址
                 //不在此列的地址将被拒统，建议使用IP或域名，不要使用localhost
                 .redirectUri("http://127.0.0.1:8001")
-                .redirectUri("http://127.0.0.1:8002")
+                .redirectUri("http://127.0.0.1:3000/token")
                 .redirectUri("https://www.baidu.com")
                 // 授权范围(此客户端能够授权的范围，名称自定义)
                 .scope("all")
@@ -284,9 +285,11 @@ public class AuthorizationServerConfig {
 
 
     /**
-     * 令牌的发放记录
-     * 存储新授权许可和查询现有授权许可的中央组件
+     * 把资源拥有者授权确认操作保存到数据库
+     * 资源拥有者（Resource Owner）对客户端的授权记录
      *
+     * @param jdbcTemplate               操作数据库
+     * @param registeredClientRepository 客户端仓库
      * @return
      */
     @Bean
@@ -295,10 +298,13 @@ public class AuthorizationServerConfig {
     }
 
     /**
+     * 令牌的发放记录
      * 把token下发信息保存到数据库（自己看需要是否需要保存这种记录再去决定是否配置）
      * 资源拥有者（Resource Owner）对客户端的授权记录
      *
-     * @return
+     * @param jdbcTemplate               操作数据库
+     * @param registeredClientRepository 客户端仓库
+     * @return 授权服务
      */
 //    @Bean
     public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate, RegisteredClientRepository registeredClientRepository) {

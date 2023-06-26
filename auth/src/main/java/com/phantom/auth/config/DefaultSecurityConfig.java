@@ -36,7 +36,8 @@ public class DefaultSecurityConfig {
 //                .and()
                 // 任何请求都需要认证（不对未登录用户开放）
                 .authorizeHttpRequests(authorize ->
-                        authorize.requestMatchers("/login").permitAll()
+                        authorize
+                                .requestMatchers("/login", "/user/*", "/user/test1").permitAll()
                                 .requestMatchers("/css/*","/images/*","/js/*").permitAll() //放行静态资源
                                 .anyRequest().authenticated()
                 )

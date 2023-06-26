@@ -15,6 +15,9 @@
  */
 package com.phantom.auth.web;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsent;
@@ -27,6 +30,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
 
@@ -46,9 +50,39 @@ public class AuthorizationConsentController {
         this.authorizationConsentService = authorizationConsentService;
     }
 
+    /**
+     * 自定义登录界面
+     *
+     * @return 登录页面
+     */
     @GetMapping("/login")
     public String login() {
         return "login";
+    }
+
+
+    /**
+     * 退出登录
+     * 注销策略:
+     *  用户登录后，会在认证服务器和客户端都保存session信息。注销时需要把两个地方的都清除，包括安全上下文，仅清除客户端或认证服务器是不彻底的。
+     *
+     * security的退出操作是 [/logout], 但是这里的退出，仅仅清除了客户端的登录信息。在认证服务器中，用户还是登录状态。浏览器不关闭时，客户端与认证服务器间的JSESSIONID是不变的。
+     * 用不变的JSESSIONID，向认证服务器发起请求，认证服务器中用户是登录状态，保存有与JSESSIONID对应的信息，这时会直接返回用户请求的信息，当然就不会再登录/授权了。
+     *
+     * @param request
+     */
+    @GetMapping("/out")
+    public String logout(HttpServletRequest request) {
+        // ========== 清理客户端 ===========
+        // 清理客户端session
+        request.getSession().invalidate();
+        // 清理客户端安全上下文
+        SecurityContextHolder.clearContext();
+        // ========== 清理认证中心 ===========
+        // 跳转至认证中心退出页面
+        // 重定向: 使用 "redirect"，注意：类的注解不能使用@RestController，要用@Controller, 因为@RestController内含@ResponseBody，解析返回的是json串。不是跳转页面
+        // 请求转发: 使用 "forward"，注意：类的注解不能使用@RestController 要用@Controller
+        return "redirect:/logout";
     }
 
     /**

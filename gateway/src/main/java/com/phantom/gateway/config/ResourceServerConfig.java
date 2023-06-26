@@ -13,6 +13,7 @@ import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -52,49 +53,38 @@ public class ResourceServerConfig {
     private IgnoreUrlsRemoveJwtFilter ignoreUrlsRemoveJwtFilter;
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) throws Exception {
         http
-                .oauth2ResourceServer()
-                .jwt()
-                .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                .jwtDecoder(jwtDecoder())
-                .and()
-                // 认证成功后，没有权限操作
-                .accessDeniedHandler(new CustomServerAccessDeniedHandler())
-                // 未认证前，发生认证异常比如token过期，token不合法
-                .authenticationEntryPoint(new CustomServerAuthenticationEntryPoint())
-                // 将字符串token转换成认证对象
-//                .bearerTokenConverter(new CustomServerBearerTokenAuthenticationConverter())
-                .and()
-                .authorizeExchange()
-                // 白名单配置
-                .pathMatchers(whitelistUrl.getUrls().toArray(new String[0]))
-                .permitAll()
-                // 其余的请求都交由此处进行权限判断处理
-                .anyExchange()
-                .access(customReactiveAuthorizationManager)
-                .and()
-                .exceptionHandling()
-                .accessDeniedHandler(new CustomServerAccessDeniedHandler())
-                .authenticationEntryPoint(new CustomServerAuthenticationEntryPoint())
-                .and()
-                .csrf()
-                .disable()
-//                .addFilterAfter(new TokenTransferFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
+                // 资源服务
+                .oauth2ResourceServer(resourceServer -> resourceServer
+                        // 认证成功后，没有权限操作
+                        .accessDeniedHandler(new CustomServerAccessDeniedHandler())
+                        // 未认证前，发生认证异常比如token过期，token不合法
+                        .authenticationEntryPoint(new CustomServerAuthenticationEntryPoint())
+                        // 将字符串token转换成认证对象
+                        //.bearerTokenConverter(new CustomServerBearerTokenAuthenticationConverter())
+                        .jwt()
+                        .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                        .jwtDecoder(jwtDecoder())
+                )
+                // 授权配置
+                .authorizeExchange(authorizeExchange -> authorizeExchange
+                        // 白名单配置
+                        .pathMatchers(whitelistUrl.getUrls().toArray(new String[0])).permitAll()
+                        // 其余的请求都交由此处进行权限判断处理
+                        .anyExchange().access(customReactiveAuthorizationManager)
+                )
+                // 异常处理
+                .exceptionHandling(exceptionConfigurer -> exceptionConfigurer
+                        // 拒绝访问
+                        .accessDeniedHandler(new CustomServerAccessDeniedHandler())
+                        // 认证失败
+                        .authenticationEntryPoint(new CustomServerAuthenticationEntryPoint())
+                )
+                // 添加过滤器
+                .csrf().disable()
+                //.addFilterAfter(new TokenTransferFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
         ;
-
-   /*     http.oauth2ResourceServer().jwt()
-                .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                .jwtDecoder(jwtDecoder());
-        //对白名单路径，直接移除JWT请求头
-//        http.addFilterBefore(ignoreUrlsRemoveJwtFilter, SecurityWebFiltersOrder.AUTHENTICATION);
-        http.authorizeExchange()
-                .pathMatchers("/auth/**", "/favicon.ico", "/hello").permitAll()//白名单配置
-                .anyExchange().access(customReactiveAuthorizationManager)//鉴权管理器配置
-                .and().exceptionHandling()
-                .accessDeniedHandler(new CustomServerAccessDeniedHandler())//处理未授权
-                .authenticationEntryPoint(new CustomServerAuthenticationEntryPoint())//处理未认证
-                .and().csrf().disable();*/
 
 
         return http.build();
@@ -110,9 +100,11 @@ public class ResourceServerConfig {
         authoritiesConverter.setAuthorityPrefix("");
         // 从哪个字段中获取权限
         authoritiesConverter.setAuthoritiesClaimName("scope");
+
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        // 获取 principal name
-        jwtAuthenticationConverter.setPrincipalClaimName("sub");
+        // 从哪个字段中获取用户名
+        jwtAuthenticationConverter.setPrincipalClaimName(JwtClaimNames.SUB);
+        // 设置权限转换器
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
 
         return new ReactiveJwtAuthenticationConverterAdapter(jwtAuthenticationConverter);
@@ -121,16 +113,19 @@ public class ResourceServerConfig {
     /**
      * 解码jwt
      */
-    public ReactiveJwtDecoder jwtDecoder() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        Resource resource = new FileSystemResource("/Users/leitan/WorkSpace/IdeaSpace/ssa/new-authoriza-server-public-key.pem");
-        String publicKeyStr = String.join("", Files.readAllLines(resource.getFile().toPath()));
-        byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyStr);
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        RSAPublicKey rsaPublicKey = (RSAPublicKey) keyFactory.generatePublic(keySpec);
-
-        return NimbusReactiveJwtDecoder.withPublicKey(rsaPublicKey)
-                .signatureAlgorithm(SignatureAlgorithm.RS256)
-                .build();
+    public ReactiveJwtDecoder jwtDecoder() {
+        try {
+            Resource resource = new FileSystemResource("/Users/leitan/WorkSpace/IdeaSpace/ssa/new-authoriza-server-public-key.pem");
+            String publicKeyStr = String.join("", Files.readAllLines(resource.getFile().toPath()));
+            byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyStr);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            RSAPublicKey rsaPublicKey = (RSAPublicKey) keyFactory.generatePublic(keySpec);
+            return NimbusReactiveJwtDecoder.withPublicKey(rsaPublicKey)
+                    .signatureAlgorithm(SignatureAlgorithm.RS256)
+                    .build();
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

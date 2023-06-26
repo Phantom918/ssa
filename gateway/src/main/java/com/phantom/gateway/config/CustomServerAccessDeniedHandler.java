@@ -3,6 +3,7 @@ package com.phantom.gateway.config;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -14,7 +15,7 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 无权限访问异常
+ * 授权校验失败异常处理
  *
  * @author lei.tan
  */
@@ -30,7 +31,11 @@ public class CustomServerAccessDeniedHandler implements ServerAccessDeniedHandle
                 .flatMap(principal -> {
                     ServerHttpResponse response = exchange.getResponse();
                     response.setStatusCode(HttpStatus.FORBIDDEN);
-                    response.getHeaders().add("content-type", "application/json;charset=UTF-8");
+//                    response.getHeaders().add("content-type", "application/json;charset=UTF-8");
+                    HttpHeaders headers = response.getHeaders();
+                    headers.add("Access-Control-Allow-Origin", "*");
+                    headers.add("Cache-control", "no-cache");
+                    headers.add("Content-Type", "application/json;charset=UTF-8");
                     String body = "{\"code\":403,\"msg\":\"您无权限访问\"}";
                     DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
                     return response.writeWith(Mono.just(buffer)).doOnError(error -> DataBufferUtils.release(buffer));

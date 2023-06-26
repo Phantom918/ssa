@@ -3,6 +3,7 @@ package com.phantom.gateway.config;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
@@ -24,8 +25,12 @@ public class CustomServerAuthenticationEntryPoint implements ServerAuthenticatio
         return Mono.defer(() -> Mono.just(exchange.getResponse()))
                 .flatMap(response -> {
                     response.setStatusCode(HttpStatus.UNAUTHORIZED);
+//                    response.getHeaders().add("content-type", "application/json;charset=UTF-8");
+                    HttpHeaders headers = response.getHeaders();
+                    headers.add("Access-Control-Allow-Origin", "*");
+                    headers.add("Cache-control", "no-cache");
+                    headers.add("Content-Type", "application/json;charset=UTF-8");
                     String body = "{\"code\":401,\"msg\":\"token不合法或过期\"}";
-                    response.getHeaders().add("content-type", "application/json;charset=UTF-8");
                     DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
                     return response.writeWith(Mono.just(buffer))
                             .doOnError(error -> DataBufferUtils.release(buffer));
