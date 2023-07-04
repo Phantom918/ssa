@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 
 /**
  * swagger3 配置
@@ -41,9 +42,9 @@ public class SwaggerConfig {
                 .bearerFormat("JWT")
                 .scheme("bearer")
                 .in(SecurityScheme.In.HEADER)
-                .name("Authorization");
+                .name(HttpHeaders.AUTHORIZATION);
         Components components = new Components();
-        // 这里的 key: authScheme 在方法上用到
+        // 这里的 key: "authScheme" 在方法注解上使用，则会在请求头带上 Authorization的信息 @Operation(summary = "测试接口test1", security = @SecurityRequirement(name = "authScheme"))
         components.addSecuritySchemes("authScheme", security);
         openAPI.components(components);
 
