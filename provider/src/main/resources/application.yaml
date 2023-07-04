@@ -34,14 +34,6 @@ logging:
       security.web.FilterChainProxy: trace # ???????
       security.web.access.ExceptionTranslationFilter: trace #????
 springdoc:
-  packages-to-scan: com.tanlei.controller
   api-docs:
     enabled: true #开启/禁止api-docs,默认为true
-    path: /v3/api-docs #api-docs访问路径
-    version: openapi_3_1
-  swagger-ui:
-    enabled: true #开启/禁止swagger, 生产可以设置为false
-    path: /swagger-ui.html #swagger 访问路径
-  use-management-port: false # 设置为true时, management也需要设置
-#  show-actuator: true # 是否显示actuator端点
 

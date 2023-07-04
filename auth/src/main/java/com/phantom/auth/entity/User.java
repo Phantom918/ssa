@@ -26,7 +26,7 @@ import java.util.List;
 @AllArgsConstructor
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-@Schema(title = "User对象", description = "用户表")
+@Schema(title = "User模型", description = "用户信息表")
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -35,7 +35,7 @@ public class User implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    @Schema(title = "用户名")
+    @Schema(title = "用户名title", description = "用户名description")
     private String username;
 
     @Schema(title = "密码")
@@ -53,7 +53,7 @@ public class User implements Serializable {
     @Schema(title = "电话")
     private String phone;
 
-    @Schema(title = "状态(0:启用 1:禁用)")
+    @Schema(title = "状态(0:启用 1:禁用)", defaultValue = "0", allowableValues = {"0", "1"})
     private Integer status;
 
     @Schema(title = "创建时间")
@@ -71,6 +71,7 @@ public class User implements Serializable {
     private String remark;
 
     @Schema(title = "角色列表")
+    @TableField(exist = false)
     private List<Role> roles;
 
 

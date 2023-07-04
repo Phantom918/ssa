@@ -19,14 +19,20 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI springShopOpenApi() {
-        return new OpenAPI()
-                .info(new Info().title("provider 接口文档")
-                        .description("provider 微服务模块的API文档")
-                        .version("v1.0")
-                        .license(new License().name("Apache 2.0").url("https://springdoc.org")))
-                .externalDocs(new ExternalDocumentation()
-                        .description("外部文档")
-                        .url("https://springshop.wiki.github.org/docs"));
+        OpenAPI openAPI = new OpenAPI();
+        // 基础信息
+        Info info = new Info();
+        info.version("V1.0");
+        info.title("Provider Restful API");
+        info.description("提供者微服务API文档");
+        info.license(new License().name("Apache 2.0").url("https://springdoc.org"));
+        openAPI.info(info);
+        // 外部文档信息
+        ExternalDocumentation documentation = new ExternalDocumentation();
+        documentation.url("https://springdoc.org/v2");
+        documentation.description("SpringDoc Wiki Documentation");
+        openAPI.externalDocs(documentation);
+        return openAPI;
     }
 
 

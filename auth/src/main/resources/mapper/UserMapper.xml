@@ -51,7 +51,29 @@
         where username = #{username}
     </select>
 
-
+    <!-- <select id="selectUsers" resultMap="BaseResultMap" parameterType="com.phantom.auth.entity.User"> -->
+    <select id="selectUsers" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from user
+        <where>
+            <if test="user.username != null">
+                username like concat('%', #{user.username}, '%')
+            </if>
+            <if test="user.nickname != null">
+                nickname like concat('%', #{user.nickname}, '%')
+            </if>
+            <if test="user.email != null">
+                email like concat('%', #{user.email}, '%')
+            </if>
+            <if test="user.phone != null">
+                phone like concat('%', #{user.phone}, '%')
+            </if>
+            <if test="user.status != null">
+                status = #{user.status}
+            </if>
+        </where>
+    </select>
 
 
 </mapper>

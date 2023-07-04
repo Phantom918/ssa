@@ -24,12 +24,21 @@ spring:
 #            - AddRequestHeader=X-Request-color, red #添加请求头
 #            - MyAuth=tanlei # 自定义过滤器,必须含有特定头信息
 #            - PreserveHostHeader #发送原主机头
+        # provider 微服务
         - id: provider_route
           uri: lb://provider-app
           predicates:
             - Path=/provider-server/**
           filters:
-            - RewritePath=/provider-server(?<segment>/?.*), $\{segment}
+            - RewritePath=/provider-server/(?<segment>/?.*), /$\{segment}
+        # auth 权限微服务
+        - id: auth_route
+          uri: lb://auth-app
+          predicates:
+            - Path=/auth-server/**
+          filters:
+            - RewritePath=/auth-server/(?<segment>/?.*), /$\{segment}
+
         - id: openapi
           uri: lb://${spring.application.name}
           predicates:
@@ -67,6 +76,7 @@ logging:
       security.web.access.ExceptionTranslationFilter: trace #????
 
 # swagger 配置
+# swagger 访问地址: http://localhost:9000/webjars/swagger-ui/index.html
 springdoc:
 #  packages-to-scan: com.tanlei.gateway.controller
 #  api-docs:
@@ -75,12 +85,12 @@ springdoc:
 #      path: /swagger-ui.html
   swagger-ui:
     urls: # 配置多个服务的 swagger 文档
-      - name: order-server
-        url: http://localhost:9000/v3/api-docs/order-server
-      - name: provider-server
-        url: http://localhost:9000/v3/api-docs/provider-server
-      - name: gateway-server
-        url: http://localhost:9000/v3/api-docs/gateway-server
+      - name: auth-server服务
+        url: /auth-server/v3/api-docs
+      - name: provider-server服务
+        url: provider-server/v3/api-docs
+      - name: gateway-server服务
+        url: http://localhost:9000/v3/api-docs
 
 # 白名单配置
 whitelist:
@@ -90,10 +100,31 @@ whitelist:
     - "/oauth2/**"
     - "/webjars/**"
     - "/api-docs/**"
-    - "/gateway-server/v3/**"
-    - "/gateway-server/swagger-ui/**"
-    - "/gateway-server/swagger-ui"
-    - "/swagger-ui/index.html"
+    - "/v3/**"
+    - "/swagger-ui/*"
+    - "/swagger-ui.html"
+    - "/auth-server/v3/**"
+    - "/hello"
     - "/provider-server/v3/**"
     - "/provider-server/hello"
-    - "/hello"
+
+
+openapi: 3.1.0
+info:
+  title: Non-oAuth Scopes example
+  version: 1.0.0
+paths:
+  /users:
+    get:
+      security:
+        - bearerAuth:
+            - 'read:users'
+            - 'public'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: jwt
+      description: 'note: non-oauth scopes are not defined at the securityScheme level'
