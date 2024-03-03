@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -51,13 +52,45 @@ public class DefaultSecurityConfig {
                 // 默认登录页面
                 // .formLogin(withDefaults())
                 .formLogin(form ->
-                        // 自定义登录页面 url
-                        form.loginPage("/login").permitAll()
+                                form
+                                        // 自定义登录页面 url
+                                        .loginPage("/login").permitAll()
+                        // 自定义登录成功后跳转的 url
+                        // .defaultSuccessUrl("http://")
+                        // 自定义登录失败后跳转的 url
+                        // .failureUrl("http://")
+                        // 自定义登录表单提交 url
+                        // .loginProcessingUrl("/login")
+                        // 自定义登录表单用户名参数名
+                        // .usernameParameter("username")
+                        // 自定义登录表单密码参数名
+                        // .passwordParameter("password")
                 )
-                .logout().logoutSuccessUrl("http://127.0.0.1:8000")
-                .and()
-                .oauth2ResourceServer()
-                .jwt();
+                .logout(logout -> logout
+                        // 自定义退出登录 url
+                        .logoutUrl("/logout")
+                        // 退出登录成功后跳转的 url
+                        .logoutSuccessUrl("http://127.0.0.1:8000")
+                        // 退出登录后删除cookie
+                        // .deleteCookies("JSESSIONID")
+                )
+                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
+                /* .sessionManagement(session ->
+                    session
+                            .disable()
+                        // 无效session跳转地址
+                        // .invalidSessionUrl("/login")
+                        // session并发控制
+                        // .maximumSessions(1)
+                        // session并发控制，阻止新的登录
+                        // .maxSessionsPreventsLogin(true)
+                        // session并发控制，session过期策略
+                        // .expiredSessionStrategy()
+                        // session并发控制，session过期跳转地址
+                        // .expiredUrl("/login")
+                ) */
+        ;
+
         return http.build();
     }
 

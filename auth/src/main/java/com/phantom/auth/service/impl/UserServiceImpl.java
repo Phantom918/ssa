@@ -2,9 +2,11 @@ package com.phantom.auth.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.phantom.auth.entity.User;
+import com.phantom.auth.entity.dto.UserDto;
 import com.phantom.auth.mapper.UserMapper;
 import com.phantom.auth.service.IUserService;
 import com.phantom.auth.util.BaseResultPage;
@@ -44,12 +46,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public BaseResultPage<User> getUserByPage(User user, int pageNum, int pageSize) {
-        log.info("UserServiceImpl => getUserByPage(): user: {},  pageNum: {}, pageSize: {}", JSON.toJSONString(user), pageNum, pageSize);
-        pageNum = pageNum <= 0 ? 1 : pageNum;
-        pageSize = pageSize <= 0 ? 10 : pageSize;
-        Page<User> page = new Page<>(pageNum, pageSize);
-        Page<User> users = userMapper.selectUsers(page, user);
+    public BaseResultPage<User> getUserByPage(UserDto userDto) {
+        log.info("UserServiceImpl => getUserByPage(): user: {}", JSON.toJSONString(userDto));
+        long pageNum = userDto.getPageNum() <= 0 ? 1 : userDto.getPageNum();
+        long pageSize = userDto.getPageSize() <= 0 ? 10 : userDto.getPageSize();
+        IPage<User> page = new Page<>(pageNum, pageSize);
+        IPage<User> users = userMapper.selectUsers(page, userDto);
         return BaseResultPage.success(users);
     }
 

@@ -90,6 +90,8 @@ public class BaseResultPage<T> implements Serializable {
         return resultPage;
     }
 
+
+
     public static BaseResultPage<String> error() {
         BaseResultPage<String> resultPage = new BaseResultPage<>();
         resultPage.setCode(StatusEnum.ERROR.getValue());

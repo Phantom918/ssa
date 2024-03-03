@@ -51,7 +51,7 @@
         where username = #{username}
     </select>
 
-    <!-- <select id="selectUsers" resultMap="BaseResultMap" parameterType="com.phantom.auth.entity.User"> -->
+    <!-- <select id="selectUsers" resultMap="BaseResultMap" parameterType="com.phantom.auth.entity.dto.UserDto"> -->
     <select id="selectUsers" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>

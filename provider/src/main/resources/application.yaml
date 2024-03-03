@@ -9,6 +9,10 @@ spring:
     password: hjXL327918
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/security?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true
+  devtools:
+    livereload:
+      enabled: true
+      port: 35732
   cloud:
     nacos:
       discovery:

@@ -18,7 +18,10 @@ spring:
   thymeleaf:
     cache: false #这个开发配置为false，避免改了模板还要重启服务器
     encoding: utf-8 #编码字符集，默认为utf-8，可不用配置
-
+  devtools:
+    livereload:
+      enabled: true
+      port: 35731
 
 debug: true
 
@@ -61,8 +64,8 @@ whitelist:
     - "/swagger-ui/*"
     - "/swagger-ui.html"
     - "/v3/api-docs/**"
-    # 本地静态资源过滤
-    - "/css/*"
-    - "/images/*"
-    - "/js/*"
+    # 本地静态资源过滤, * 标示当前目录下一层路径，** 表示多层
+    - "/js/**"
+    - "/css/**"
+    - "/images/**"
 

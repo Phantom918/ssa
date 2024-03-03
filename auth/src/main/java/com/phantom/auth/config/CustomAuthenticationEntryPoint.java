@@ -29,11 +29,11 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
         log.info("[token认证异常]自定义处理.....");
         // 设置状态码为 403 以及请求头
-        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setHeader("Content-Type", "application/json;charset=utf-8");
         // 组装数据返回
         Map<String, Object> result = new HashMap<>(3);
-        result.put("status", HttpStatus.FORBIDDEN.value());
+        result.put("status", HttpStatus.UNAUTHORIZED.value());
         result.put("error", authException.getMessage());
         result.put("message", "token认证失败，请重新登录！");
         response.getWriter().write(JSON.toJSONString(result));

@@ -2,6 +2,7 @@ package com.phantom.auth.service;
 
 import com.phantom.auth.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.phantom.auth.entity.dto.UserDto;
 import com.phantom.auth.util.BaseResultPage;
 
 import java.util.List;
@@ -35,12 +36,10 @@ public interface IUserService extends IService<User> {
     /**
      * 分页查询用户信息
      *
-     * @param user     查询条件
-     * @param pageNum  当前第几页
-     * @param pageSize 每页多少条数据
+     * @param userDto 查询条件
      * @return 分页数据
      */
-    BaseResultPage<User> getUserByPage(User user, int pageNum, int pageSize);
+    BaseResultPage<User> getUserByPage(UserDto userDto);
 
 
 }

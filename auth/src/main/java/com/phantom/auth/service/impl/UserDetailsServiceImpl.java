@@ -42,7 +42,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("用户不存在!");
         }
         // 用户是否有效
-        boolean enabledFlag = user.getStatus() == 0;
+        boolean enabledFlag = user.getStatus().equals("0");
         // 注意: 这里使用的是spring security的UserDetails, 而不是自己的User，即使使用自己的User实现了UserDetails接口也不行，会报一个如下的错误，
         // Ø意思就是自己的定义的这个类不在白名单中，所以需要使用spring security的UserDetails
         // org.springframework.security.authentication.BadCredentialsException is not whitelisted.

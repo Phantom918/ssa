@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.phantom.auth.entity.User;
+import com.phantom.auth.entity.dto.UserDto;
 import com.phantom.auth.service.IUserService;
 import com.phantom.auth.util.BaseResult;
 import com.phantom.auth.util.BaseResultPage;
@@ -17,10 +18,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 /**
@@ -43,13 +41,11 @@ public class AuthController {
     @GetMapping("/getUserByPage")
     @Operation(summary = "用户信息-分页查询", description = "这是用户分页查询的接口，采用的 mybatis-plus 分页", security = @SecurityRequirement(name = "authScheme"))
     @Parameters(value = {
-            @Parameter(name = "user", description = "用户查询条件对象", required = false),
-            @Parameter(name = "pageNum", description = "第几页", required = true),
-            @Parameter(name = "pageSize", description = "每页几条", required = true)
+            @Parameter(name = "user", description = "用户查询条件对象", required = true)
     })
-    public BaseResultPage<User> getUserByPage(User user, int pageNum, int pageSize) {
-        log.info("AuthController => getUserByPage(): user: {},  pageNum: {}, pageSize: {}", JSON.toJSONString(user), pageNum, pageSize);
-        BaseResultPage<User> resultPage = userService.getUserByPage(user, pageNum, pageSize);
+    public BaseResultPage<User> getUserByPage(UserDto user) {
+        log.info("AuthController => getUserByPage(): user: {}", JSON.toJSONString(user));
+        BaseResultPage<User> resultPage = userService.getUserByPage(user);
         log.info("getUserByPage() => 查询结果: {}", resultPage);
         // service 层分页案例，mapper也可以使用这种形式
         /*IPage<User> page = new Page<>(1, 10);

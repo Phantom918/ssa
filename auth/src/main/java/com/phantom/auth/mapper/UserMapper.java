@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.phantom.auth.entity.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.phantom.auth.entity.dto.UserDto;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -40,10 +41,10 @@ public interface UserMapper extends BaseMapper<User> {
     /**
      * 用户信息-分页查询
      *
-     * @param page 分页参数
-     * @param user 用户对象查询条件
+     * @param page    分页参数
+     * @param userDto 用户对象查询条件
      * @return 分页用户信息
      */
-    Page<User> selectUsers(IPage<User> page, @Param("user") User user);
+    Page<User> selectUsers(IPage<User> page, @Param("user") UserDto userDto);
 
 }

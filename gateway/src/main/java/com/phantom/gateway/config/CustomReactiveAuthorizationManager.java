@@ -42,11 +42,7 @@ public class CustomReactiveAuthorizationManager implements ReactiveAuthorization
             // 查询当前登录的用户是否有权限访问
             Integer count = userMapper.checkAuthorityCount(auth.getName(), path);
             log.info("当前访问路径[{}]查询到的权限配置为[{}]条....", path, count);
-            if (count > 0) {
-                return Mono.just(new AuthorizationDecision(true));
-            } else {
-                return Mono.just(new AuthorizationDecision(false));
-            }
+            return Mono.just(new AuthorizationDecision(count > 0));
         });
         /*return authentication
                 .filter(Authentication::isAuthenticated)

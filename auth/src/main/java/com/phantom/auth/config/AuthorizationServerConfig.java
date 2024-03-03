@@ -1,11 +1,9 @@
 package com.phantom.auth.config;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.phantom.auth.jose.Jwks;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +13,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.lob.DefaultLobHandler;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -47,23 +44,49 @@ import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
 import java.util.UUID;
 
-/**
- * @author Joe Grandja
- * @author Daniel Garnier-Moiroux
- */
 
+/**
+ * 授权服务器配置
+ *
+ * @author leitan
+ * @date 2023/07/16
+ */
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 public class AuthorizationServerConfig {
+
+
+    /**
+     * 自定义身份验证入口点
+     */
+    @Resource
+    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+    /**
+     * 自定义访问被拒绝处理程序
+     */
+    @Resource
+    private CustomAccessDeniedHandler customAccessDeniedHandler;
+
 
     /**
      * 自定义授权界面 url
      */
     private static final String CUSTOM_CONSENT_PAGE_URI = "/oauth2/consent";
 
+    /**
+     * 密码编码器
+     */
     @Resource
     private PasswordEncoder passwordEncoder;
 
+    /**
+     * 授权服务器安全过滤器链
+     *
+     * @param http http
+     * @return {@link SecurityFilterChain}
+     * @throws Exception 异常
+     */
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -89,15 +112,16 @@ public class AuthorizationServerConfig {
 
         // token 设置
         authorizationServerConfigurer
-                .tokenEndpoint(configurer -> configurer.errorResponseHandler((request, response, exception) -> {
-                    OAuth2AuthenticationException oAuth2AuthenticationException = (OAuth2AuthenticationException) exception;
-                    OAuth2Error error = oAuth2AuthenticationException.getError();
-                    log.error("错误原因:[{}]", error);
-                    log.info("认证异常", exception);
-                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                    response.setContentType(MediaType.APPLICATION_JSON.toString());
-                    response.getWriter().write("{\"code\":-1,\"msg\":\"token认证失败\"}");
-                }));
+                .tokenEndpoint(configurer ->
+                        configurer.errorResponseHandler((request, response, exception) -> {
+                            OAuth2AuthenticationException oAuth2AuthenticationException = (OAuth2AuthenticationException) exception;
+                            OAuth2Error error = oAuth2AuthenticationException.getError();
+                            log.error("错误原因:[{}]", error);
+                            log.info("认证异常", exception);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                            response.setContentType(MediaType.APPLICATION_JSON.toString());
+                            response.getWriter().write("{\"code\":-1,\"msg\":\"token认证失败\"}");
+                        }));
 
 
         // Enable OpenID Connect 1.0
@@ -113,10 +137,13 @@ public class AuthorizationServerConfig {
                                 OAuth2Error oAuth2Error = oAuth2AuthenticationException.getError();
                                 switch (oAuth2Error.getErrorCode()) {
                                     case OAuth2ErrorCodes.INVALID_CLIENT:
-                                        log.info("未知的客户端");
+                                        log.info("无效的客户端...");
                                         break;
                                     case OAuth2ErrorCodes.ACCESS_DENIED:
-                                        log.info("您无权限访问");
+                                        log.info("无权限访问...");
+                                        break;
+                                    case OAuth2ErrorCodes.INVALID_GRANT:
+                                        log.info("无效的授权码...");
                                         break;
                                     default:
                                         break;
@@ -142,8 +169,18 @@ public class AuthorizationServerConfig {
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 // 忽略掉相关端点的csrf（跨站请求）：对授权端点的访问可以是跨站的
                 .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+                /* .headers(headers ->
+                        headers
+                                .cacheControl().disable() // 禁用HTTP响应标头
+                                .frameOptions().disable()
+                ) */
                 .exceptionHandling(exceptions ->
-                        exceptions.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
+                                exceptions
+                                        .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
+                        // 登录异常处理
+                        // .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        // 权限校验异常处理
+                        // .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
                 .apply(authorizationServerConfigurer);
@@ -218,7 +255,7 @@ public class AuthorizationServerConfig {
                 // JWT_BEARER
                 .authorizationGrantType(AuthorizationGrantType.JWT_BEARER)
                 // 回调地址: 授权服务器向当前客户端响应后，会回调下面地址
-                //不在此列的地址将被拒统，建议使用IP或域名，不要使用localhost
+                // 不在此列的地址将被拒统，建议使用IP或域名，不要使用localhost
                 .redirectUri("http://127.0.0.1:8000/login/oauth2/code/myClient")
                 .redirectUri("http://127.0.0.1:3000/token")
                 .redirectUri("https://www.baidu.com")
@@ -270,7 +307,7 @@ public class AuthorizationServerConfig {
                 // JWT_BEARER
                 .authorizationGrantType(AuthorizationGrantType.JWT_BEARER)
                 // 回调地址: 授权服务器向当前客户端响应后，会回调下面地址
-                //不在此列的地址将被拒统，建议使用IP或域名，不要使用localhost
+                // 不在此列的地址将被拒统，建议使用IP或域名，不要使用localhost
                 .redirectUri("http://127.0.0.1:8001")
                 .redirectUri("http://127.0.0.1:3000/token")
                 .redirectUri("https://www.baidu.com")
@@ -323,9 +360,9 @@ public class AuthorizationServerConfig {
         // 加载证书 读取类路径文件
         org.springframework.core.io.Resource resource = new FileSystemResource("/Users/leitan/WorkSpace/IdeaSpace/ssa/new-authoriza-server.jks");
         // 创建秘钥工厂(加载读取证书数据)
-        KeyStoreKeyFactory keyStoreKeyFactory = new KeyStoreKeyFactory(resource, "123456".toCharArray());
+        KeyStoreKeyFactory keyStoreKeyFactory = new KeyStoreKeyFactory(resource, "123456" .toCharArray());
         // 读取秘钥对(公钥、私钥)
-        KeyPair keyPair = keyStoreKeyFactory.getKeyPair("new-authoriza-server", "123456".toCharArray());
+        KeyPair keyPair = keyStoreKeyFactory.getKeyPair("new-authoriza-server", "123456" .toCharArray());
         // 读取公钥
         RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
         // 读取私钥

@@ -62,5 +62,9 @@ public class BaseResult<T> implements Serializable {
         return new BaseResult<>(StatusEnum.ERROR.getValue(), StatusEnum.ERROR.getDescription());
     }
 
+    public static BaseResult<String> error(String message) {
+        return new BaseResult<>(StatusEnum.ERROR.getValue(), message);
+    }
+
 
 }

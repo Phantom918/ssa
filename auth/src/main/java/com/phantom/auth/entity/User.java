@@ -54,7 +54,7 @@ public class User implements Serializable {
     private String phone;
 
     @Schema(title = "状态(0:启用 1:禁用)", defaultValue = "0", allowableValues = {"0", "1"})
-    private Integer status;
+    private String status;
 
     @Schema(title = "创建时间")
     @TableField(fill = FieldFill.INSERT)

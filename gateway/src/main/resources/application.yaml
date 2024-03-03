@@ -9,6 +9,10 @@ spring:
     password: hjXL327918
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/security?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true
+  devtools:
+    livereload:
+      enabled: true
+      port: 35730
   cloud:
     gateway:
       # 路由规则配置
@@ -21,9 +25,9 @@ spring:
             # http://localhost:8088/order-server/order/add 路由到 -> http://localhost:8090/order/add
           filters:
             - StripPrefix=1 # 转发前去掉第一层路径，也就是去掉 http://localhost:8088/order-server
-#            - AddRequestHeader=X-Request-color, red #添加请求头
-#            - MyAuth=tanlei # 自定义过滤器,必须含有特定头信息
-#            - PreserveHostHeader #发送原主机头
+        #            - AddRequestHeader=X-Request-color, red #添加请求头
+        #            - MyAuth=tanlei # 自定义过滤器,必须含有特定头信息
+        #            - PreserveHostHeader #发送原主机头
         # provider 微服务
         - id: provider_route
           uri: lb://provider-app
@@ -42,9 +46,9 @@ spring:
         - id: openapi
           uri: lb://${spring.application.name}
           predicates:
-              - Path=/v3/api-docs/**
+            - Path=/v3/api-docs/**
           filters:
-              - RewritePath=/v3/api-docs/(?<path>/?.*), /$\{path}/v3/api-docs
+            - RewritePath=/v3/api-docs/(?<path>/?.*), /$\{path}/v3/api-docs
       discovery:
         locator:
           # 是否启动服务自动识别 (使用这个前提是 访问其他服务组件的时候需要使用对应服务的 服务名 和路径来进行，那么上面
@@ -78,11 +82,11 @@ logging:
 # swagger 配置
 # swagger 访问地址: http://localhost:9000/webjars/swagger-ui/index.html
 springdoc:
-#  packages-to-scan: com.tanlei.gateway.controller
-#  api-docs:
-#    path: /api-docs
-#    swagger-ui:
-#      path: /swagger-ui.html
+  #  packages-to-scan: com.tanlei.gateway.controller
+  #  api-docs:
+  #    path: /api-docs
+  #    swagger-ui:
+  #      path: /swagger-ui.html
   swagger-ui:
     urls: # 配置多个服务的 swagger 文档
       - name: auth-server服务
@@ -107,19 +111,10 @@ whitelist:
     - "/hello"
     - "/provider-server/v3/**"
     - "/provider-server/hello"
+    # 调用认证接口的白名单
+    - "/auth-server/oauth2/authorize"
+    - "/auth-server/oauth2/token"
 
-
-openapi: 3.1.0
-info:
-  title: Non-oAuth Scopes example
-  version: 1.0.0
-paths:
-  /users:
-    get:
-      security:
-        - bearerAuth:
-            - 'read:users'
-            - 'public'
 
 components:
   securitySchemes:

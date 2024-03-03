@@ -1,13 +1,11 @@
 package com.phantom.gateway.filter;
 
 import com.nimbusds.jose.JWSObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -20,10 +18,10 @@ import java.text.ParseException;
  * @author macro
  * @date 2020/6/17
  */
+@Slf4j
 //@Component
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(AuthGlobalFilter.class);
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -36,7 +34,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             String realToken = token.replace("Bearer ", "");
             JWSObject jwsObject = JWSObject.parse(realToken);
             String userStr = jwsObject.getPayload().toString();
-            LOGGER.info("AuthGlobalFilter.filter() user:{}",userStr);
+            log.info("AuthGlobalFilter.filter() user:{}",userStr);
             ServerHttpRequest request = exchange.getRequest().mutate().header("user", userStr).build();
             exchange = exchange.mutate().request(request).build();
         } catch (ParseException e) {
