@@ -12,6 +12,7 @@ import com.phantom.auth.util.BaseResultPage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -29,7 +30,7 @@ import java.util.Timer;
  * @since 2023-04-19
  */
 @Slf4j
-//@CrossOrigin
+@CrossOrigin
 @RestController
 @RequestMapping("/user")
 @Tag(name = "UserController", description = "用户管理")
@@ -62,15 +63,9 @@ public class UserController {
     }
 
 
-    /**
-     * 分页查询用户信息
-     *
-     * @param userDto 用户查询对象
-     * @return
-     */
     @PostMapping("/queryByPage")
     @Operation(summary = "用户分页查询")
-    @Parameter(name = "userDto", description = "用户对象", required = true)
+    @Parameter(name = "userDto", description = "用户对象", required = true, schema = @Schema(implementation = UserDto.class))
     public BaseResultPage<User> queryByPage(@RequestBody UserDto userDto) {
         log.info("AuthController => getUserByPage(): userDto: {}", JSON.toJSONString(userDto));
         log.info("你是我心中的唯一=============1");
@@ -80,7 +75,7 @@ public class UserController {
 
     @PostMapping("/saveUser")
     @Operation(summary = "保存用户")
-    @Parameter(name = "userDto", description = "用户对象", required = true)
+    @Parameter(name = "userDto", description = "用户对象", required = true, schema = @Schema(implementation = UserDto.class))
     public BaseResult<String> saveUser(@RequestBody UserDto userDto) {
         log.info("saveUser() => userDto: {}", userDto);
         User user = UserMapStruct.INSTANCE.toUser(userDto);
@@ -94,8 +89,8 @@ public class UserController {
     }
 
     @PostMapping("/deleteUser/{userId}")
-//    @Operation(summary = "删除用户")
-//    @Parameter(name = "userId", description = "用户id", required = true)
+    @Operation(summary = "删除用户")
+    @Parameter(name = "userId", description = "用户id", required = true)
     public BaseResult<String> deleteUser(@PathVariable String userId) {
         log.info("deleteUser() => userId: {}", userId);
         boolean result = userService.removeById(userId);
@@ -108,6 +103,7 @@ public class UserController {
 
     @PostMapping
     @Operation(summary = "更新用户信息")
+    @Parameter(name = "userDto", description = "用户对象", required = true, schema = @Schema(implementation = UserDto.class))
     public BaseResult<String> updateUser(@RequestBody UserDto userDto) {
         log.info("updateUser() => userDto: {}", userDto);
         User user = UserMapStruct.INSTANCE.toUser(userDto);

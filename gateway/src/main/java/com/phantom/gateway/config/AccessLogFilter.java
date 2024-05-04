@@ -37,8 +37,7 @@ public class AccessLogFilter implements GlobalFilter {
         return chain.filter(exchange.mutate().build()).then(Mono.fromRunnable(() -> {
             ServerHttpResponse response = exchange.getResponse();
             HttpStatusCode statusCode = response.getStatusCode();
-            log.info("请求路径:{},客户端远程IP地址:{},请求方法:{},目标URI:{},响应码:{}",
-                    path, remoteAddress, method, targetUri, statusCode);
+            log.info("请求路径: {}, 客户端IP: {}, 方法: {}, 目标URI: {},响应码: {}", path, remoteAddress, method, targetUri, statusCode);
         }));
     }
 }

@@ -54,7 +54,16 @@ spring:
           # 是否启动服务自动识别 (使用这个前提是 访问其他服务组件的时候需要使用对应服务的 服务名 和路径来进行，那么上面
           # 的 routes 整个路由规则就不用配置了，自动按照服务名去做断言路由匹配，但是日常使用建议使用 routes 的方式
           enabled: true
-
+      globalcors:
+        cors-configurations:
+            '[/**]':
+#                allowedOrigins: "*"
+                allowedOriginPatterns: "*"
+                allowedMethods: "*" # 允许所有方法
+                allowedHeaders:
+                - "*"
+                allowCredentials: true
+                maxAge: 3600 # 1小时
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
@@ -92,7 +101,7 @@ springdoc:
       - name: auth-server服务
         url: /auth-server/v3/api-docs
       - name: provider-server服务
-        url: provider-server/v3/api-docs
+        url: /provider-server/v3/api-docs
       - name: gateway-server服务
         url: http://localhost:9000/v3/api-docs
 

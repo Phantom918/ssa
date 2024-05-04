@@ -34,7 +34,7 @@
         <pagehelper-spring-boot-starter.version>1.4.7</pagehelper-spring-boot-starter.version>
         <netty-resolver-dns-native-macos.version>4.1.91.Final</netty-resolver-dns-native-macos.version>
         <fastjson2.version>2.0.28</fastjson2.version>
-        <hutool-all.version>5.8.18</hutool-all.version>
+        <hutool-all.version>5.8.27</hutool-all.version>
         <easyexcel.version>3.3.2</easyexcel.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
     </properties>
